@@ -1,10 +1,4 @@
-import { Module } from '@nestjs/common';
-
-export type AnyModule = new (...args: any[]) => any;
-
-export interface ModuleGroup {
-  [key: string]: AnyModule;
-}
+import { ModuleGroup, AnyModule } from '../types';
 
 export class ModuleSimplifier {
   private static groups: Map<string, ModuleGroup> = new Map();
