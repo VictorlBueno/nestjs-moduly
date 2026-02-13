@@ -30,12 +30,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/victorlbueno/nestjs-moduly.git"
+    "url": "https://github.com/VictorlBueno/nestjs-moduly.git"
   },
   "bugs": {
-    "url": "https://github.com/victorlbueno/nestjs-moduly/issues"
+    "url": "https://github.com/VictorlBueno/nestjs-moduly/issues"
   },
-  "homepage": "https://github.com/victorlbueno/nestjs-moduly#readme",
+  "homepage": "https://github.com/VictorlBueno/nestjs-moduly#readme",
   "peerDependencies": {
     "@nestjs/common": "^9.0.0 || ^10.0.0 || ^11.0.0",
     "@nestjs/core": "^9.0.0 || ^10.0.0 || ^11.0.0",

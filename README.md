@@ -1,7 +1,7 @@
 # NestJS Moduly
 
 [![NPM Version](https://img.shields.io/npm/v/nestjs-moduly.svg)](https://www.npmjs.com/package/nestjs-moduly)
-[![License](https://img.shields.io/npm/l/nestjs-moduly.svg)](https://github.com/victorlbueno/nestjs-moduly/blob/main/LICENSE)
+[![License](https://img.shields.io/npm/l/nestjs-moduly.svg)](https://github.com/VictorlBueno/nestjs-moduly/blob/main/LICENSE)
 [![Downloads](https://img.shields.io/npm/dm/nestjs-moduly.svg)](https://www.npmjs.com/package/nestjs-moduly)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
 [![NestJS](https://img.shields.io/badge/NestJS-Compatible-red.svg)](https://nestjs.com/)
@@ -532,7 +532,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-MIT © [Victor Bueno](https://github.com/victorlbueno)
+MIT © [Victor Bueno](https://github.com/VictorlBueno)
 
 ---
 
