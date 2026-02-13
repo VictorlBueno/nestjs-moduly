@@ -1,0 +1,61 @@
+{
+  "name": "nestjs-moduly",
+  "version": "1.0.0",
+  "description": "Simplify NestJS module management with organized groups, singleton instance sharing, and dual injection support",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build",
+    "clean": "rm -rf dist",
+    "prebuild": "npm run clean"
+  },
+  "keywords": [
+    "nestjs",
+    "module",
+    "imports",
+    "moduly",
+    "dependency-injection",
+    "singleton",
+    "shared-instances",
+    "module-management",
+    "di",
+    "dual-injection",
+    "nest",
+    "nest-js",
+    "typescript"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/victorlbueno/nestjs-moduly.git"
+  },
+  "bugs": {
+    "url": "https://github.com/victorlbueno/nestjs-moduly/issues"
+  },
+  "homepage": "https://github.com/victorlbueno/nestjs-moduly#readme",
+  "peerDependencies": {
+    "@nestjs/common": "^9.0.0 || ^10.0.0 || ^11.0.0",
+    "@nestjs/core": "^9.0.0 || ^10.0.0 || ^11.0.0",
+    "reflect-metadata": "^0.1.13",
+    "rxjs": "^7.0.0"
+  },
+  "devDependencies": {
+    "@nestjs/common": "^10.0.0",
+    "@nestjs/core": "^10.0.0",
+    "reflect-metadata": "^0.1.13",
+    "rxjs": "^7.8.1",
+    "typescript": "^5.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
+}
