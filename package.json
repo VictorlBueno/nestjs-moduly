@@ -1,6 +1,6 @@
 {
   "name": "nestjs-moduly",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Simplify NestJS module management with organized groups, singleton instance sharing, and dual injection support",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
