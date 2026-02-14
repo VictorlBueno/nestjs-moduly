@@ -6,11 +6,6 @@ import { RequestTrackingModule } from './modules/request/request-tracking.module
 
 @Module({
   imports: [
-    UserModule,
-    ProductModule,
-    RequestTrackingModule,
-  ],
-  providers: [
     Infrastructure.Logger,
     Database.Primary,
     Database.Replica,
@@ -18,6 +13,9 @@ import { RequestTrackingModule } from './modules/request/request-tracking.module
     Cache.Memcached,
     RequestScope.Context,
     TransientScope.Counter,
+    UserModule,
+    ProductModule,
+    RequestTrackingModule,
   ],
 })
 export class AppModule {

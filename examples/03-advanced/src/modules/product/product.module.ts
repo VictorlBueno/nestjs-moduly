@@ -3,13 +3,12 @@ import { Repository, Cache, Storage, Queue } from '../../instances';
 import { ProductController } from './product.controller';
 
 @Module({
-  controllers: [ProductController],
-  providers: [
+  imports: [
     Repository.Products,
     Cache.Memcached,
     Storage.S3,
     Queue.Products,
   ],
-  exports: [Repository.Products],
+  controllers: [ProductController],
 })
 export class ProductModule {}

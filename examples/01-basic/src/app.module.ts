@@ -3,10 +3,8 @@ import { AppController } from './app.controller';
 import { Repository } from './instances';
 
 @Module({
-  imports: [],
+  imports: [Repository.Users],
   controllers: [AppController],
-  providers: [
-    Repository.Users,
-  ],
+  providers: [],
 })
 export class AppModule {}

@@ -1,9 +1,9 @@
 import { Controller, Get } from '@nestjs/common';
-import { IRequestTrackingRepository } from '../../repositories/request-tracking.interface';
+import { RequestTrackingRepository } from '../../repositories/request-tracking.repository';
 
 @Controller('tracking')
 export class RequestTrackingController {
-  constructor(private readonly requestTrackingRepository: IRequestTrackingRepository) {}
+  constructor(private readonly requestTrackingRepository: RequestTrackingRepository) {}
 
   @Get('request-id')
   getRequestId() {

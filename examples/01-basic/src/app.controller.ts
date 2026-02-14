@@ -1,9 +1,9 @@
 import { Controller, Get, Post, Body, Param } from '@nestjs/common';
-import { IUserRepository } from "./repositories/user.interface";
+import { UserRepository } from "./repositories/user.repository";
 
 @Controller()
 export class AppController {
-  constructor(private readonly userRepository: IUserRepository) {}
+  constructor(private readonly userRepository: UserRepository) {}
 
   @Get('users')
   getAllUsers() {

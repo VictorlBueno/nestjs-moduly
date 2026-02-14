@@ -1,13 +1,12 @@
 import { Module } from '@nestjs/common';
-import {Notification, Repository} from '../../instances';
+import { Notification, Repository } from '../../instances';
 import { ProductController } from './product.controller';
 
 @Module({
-  controllers: [ProductController],
-  providers: [
+  imports: [
     Repository.Products,
-    Notification.Email
+    Notification.Email,
   ],
-  exports: [Repository.Products],
+  controllers: [ProductController],
 })
 export class ProductModule {}

@@ -1,11 +1,12 @@
 import { Controller, Get, Post, Body, Param } from '@nestjs/common';
-import { IOrderRepository } from '../../repositories/order.interface';
+import { OrderRepository } from '../../repositories/order.repository';
+import { S3Service } from '../../services/s3.service';
 
 @Controller('orders')
 export class OrderController {
   constructor(
-    private readonly orderRepository: IOrderRepository,
-    private readonly s3Service: any,
+    private readonly orderRepository: OrderRepository,
+    private readonly s3Service: S3Service,
   ) {}
 
   @Get()

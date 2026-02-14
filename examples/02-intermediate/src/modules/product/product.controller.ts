@@ -1,12 +1,12 @@
 import { Controller, Get, Post, Delete, Body, Param } from '@nestjs/common';
-import { IProductRepository } from '../../repositories/product.interface';
-import { IEmailService } from '../../services/email.interface';
+import { ProductRepository } from '../../repositories/product.repository';
+import { EmailService } from '../../services/email.service';
 
 @Controller('products')
 export class ProductController {
   constructor(
-      private readonly productRepository: IProductRepository,
-      private readonly emailService: IEmailService
+      private readonly productRepository: ProductRepository,
+      private readonly emailService: EmailService
   ) {}
 
   @Get()

@@ -1,9 +1,9 @@
 import { Controller, Get, Post, Delete, Body } from '@nestjs/common';
-import { IProductRepository } from '../../repositories/product.interface';
+import { ProductRepository } from '../../repositories/product.repository';
 
 @Controller('products')
 export class ProductController {
-  constructor(private readonly productRepository: IProductRepository) {}
+  constructor(private readonly productRepository: ProductRepository) {}
 
   @Get()
   findAll() {

@@ -79,31 +79,46 @@ export const Repository = createInstanceGroup('Repository', {
   useClassAsToken: true,
 });
 
-Infrastructure.Logger = new LoggerService();
+const logger = new LoggerService();
+const primaryDb = new DatabaseService('PrimaryDB');
+const replicaDb = new DatabaseService('ReplicaDB');
+const redisCache = new CacheService('Redis');
+const memcachedCache = new CacheService('Memcached');
+const requestContext = new RequestContextService();
+const transientCounter = new TransientCounterService();
+const s3Service = new S3Service({ bucket: 'my-bucket', region: 'us-east-1' });
+const emailService = new EmailService({ from: 'noreply@example.com', smtp: 'smtp.example.com' });
+const smsService = new SMSService({ provider: 'twilio', apiKey: 'xxx' });
+const ordersQueue = new QueueService({ name: 'orders', type: 'sqs' });
+const productsQueue = new QueueService({ name: 'products', type: 'sqs' });
+const analyticsTracker = new AnalyticsService({ apiKey: 'analytics-key', endpoint: 'https://analytics.example.com' });
+const notificationService = new NotificationService(emailService, smsService);
 
-Database.Primary = new DatabaseService('PrimaryDB');
-Database.Replica = new DatabaseService('ReplicaDB');
+Infrastructure.Logger = logger;
 
-Cache.Redis = new CacheService('Redis');
-Cache.Memcached = new CacheService('Memcached');
+Database.Primary = primaryDb;
+Database.Replica = replicaDb;
 
-RequestScope.Context = new RequestContextService();
+Cache.Redis = redisCache;
+Cache.Memcached = memcachedCache;
 
-TransientScope.Counter = new TransientCounterService();
+RequestScope.Context = requestContext;
 
-Storage.S3 = new S3Service({ bucket: 'my-bucket', region: 'us-east-1' });
+TransientScope.Counter = transientCounter;
 
-NotificationEmail.Email = new EmailService({ from: 'noreply@example.com', smtp: 'smtp.example.com' });
+Storage.S3 = s3Service;
 
-NotificationSMS.SMS = new SMSService({ provider: 'twilio', apiKey: 'xxx' });
+NotificationEmail.Email = emailService;
 
-Queue.Orders = new QueueService({ name: 'orders', type: 'sqs' });
-Queue.Products = new QueueService({ name: 'products', type: 'sqs' });
+NotificationSMS.SMS = smsService;
 
-Analytics.Tracker = new AnalyticsService({ apiKey: 'analytics-key', endpoint: 'https://analytics.example.com' });
+Queue.Orders = ordersQueue;
+Queue.Products = productsQueue;
 
-Notification.Main = new NotificationService(NotificationEmail.Email, NotificationSMS.SMS);
+Analytics.Tracker = analyticsTracker;
 
-Repository.Users = new UserRepository(Infrastructure.Logger, Database.Primary, Cache.Redis, Notification.Main, Analytics.Tracker);
-Repository.Products = new ProductRepository(Database.Replica, Cache.Memcached, Storage.S3, Queue.Products, Analytics.Tracker);
-Repository.RequestTracking = new RequestTrackingRepository(RequestScope.Context, TransientScope.Counter);
+Notification.Main = notificationService;
+
+Repository.Users = new UserRepository(logger, primaryDb, redisCache, notificationService, analyticsTracker);
+Repository.Products = new ProductRepository(replicaDb, memcachedCache, s3Service, productsQueue, analyticsTracker);
+Repository.RequestTracking = new RequestTrackingRepository(requestContext, transientCounter);

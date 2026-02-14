@@ -5,13 +5,11 @@ import { OrderModule } from './modules/order/order.module';
 
 @Module({
   imports: [
-    ProductModule,
-    OrderModule,
-  ],
-  providers: [
     Database.Primary,
     Database.Replica,
     Cache.Redis,
+    ProductModule,
+    OrderModule,
   ],
 })
 export class AppModule {}

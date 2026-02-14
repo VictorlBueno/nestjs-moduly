@@ -1,9 +1,9 @@
 import { Controller, Get, Post, Delete, Body } from '@nestjs/common';
-import { IUserRepository } from '../../repositories/user.interface';
+import { UserRepository } from '../../repositories/user.repository';
 
 @Controller('users')
 export class UserController {
-  constructor(private readonly userRepository: IUserRepository) {}
+  constructor(private readonly userRepository: UserRepository) {}
 
   @Get()
   findAll() {

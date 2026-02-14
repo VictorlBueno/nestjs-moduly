@@ -3,11 +3,10 @@ import { Repository, Storage } from '../../instances';
 import { OrderController } from './order.controller';
 
 @Module({
-  controllers: [OrderController],
-  providers: [
+  imports: [
     Repository.Orders,
     Storage.S3,
   ],
-  exports: [Repository.Orders],
+  controllers: [OrderController],
 })
 export class OrderModule {}

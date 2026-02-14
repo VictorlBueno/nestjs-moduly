@@ -3,13 +3,12 @@ import { Repository, Infrastructure, Cache, Notification } from '../../instances
 import { UserController } from './user.controller';
 
 @Module({
-  controllers: [UserController],
-  providers: [
+  imports: [
     Repository.Users,
     Infrastructure.Logger,
     Cache.Redis,
     Notification.Main,
   ],
-  exports: [Repository.Users],
+  controllers: [UserController],
 })
 export class UserModule {}

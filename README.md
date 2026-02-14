@@ -8,6 +8,11 @@
 
 Simplify NestJS module management. Declare dependencies once, share singleton instances across modules, and inject with or without `@Inject()`.
 
+## Requirements
+
+- NestJS 11.x or higher
+- Node.js 16+
+
 ## Installation
 
 ```bash
@@ -40,9 +45,9 @@ export const Repository = createInstanceGroup('Repository');
 Repository.Users = new UserRepository(database);
 ```
 
-### 2. Use as Providers
+### 2. Import in Modules
 
-Use the declared instances in your modules:
+Use the declared instances in the `imports` array of your modules:
 
 ```typescript
 // app.module.ts
@@ -50,17 +55,17 @@ import { Module } from '@nestjs/common';
 import { Repository } from './instances';
 
 @Module({
-  controllers: [UserController],
-  providers: [
+  imports: [
     Repository.Users,
   ],
+  controllers: [UserController],
 })
 export class AppModule {}
 ```
 
 ### 3. Inject Dependencies
 
-Inject without `@Inject()`:
+Inject using the concrete class type:
 
 ```typescript
 @Controller('users')
@@ -70,25 +75,6 @@ export class UserController {
   @Get()
   findAll() {
     return this.userRepository.findAll();
-  }
-}
-```
-
-Or with `@Inject()` and external services:
-
-```typescript
-@Controller('products')
-export class ProductController {
-  constructor(
-    private readonly productRepository: IProductRepository,
-    private readonly emailService: IEmailService,
-  ) {}
-
-  @Post(':id/image')
-  uploadImage(@Param('id') id: string, @Body() body: any) {
-    const result = this.productRepository.uploadImage(id, body.imageData);
-    this.emailService.send('admin@example.com', 'Product Image Uploaded', `Product ${id} image uploaded`);
-    return result;
   }
 }
 ```
@@ -106,20 +92,19 @@ export const Repository = createInstanceGroup('Repository');
 export const Database = createInstanceGroup('Database');
 export const Storage = createInstanceGroup('Storage');
 
-// Declare instances
 Repository.Users = new UserRepository(database);
 Repository.Products = new ProductRepository(database);
 Database.Primary = new DatabaseService(config);
 Storage.S3 = new S3Service(s3Config);
 ```
 
-### Automatic Provider Wrapping
+### Automatic Module Wrapping
 
-Each instance automatically becomes a NestJS provider:
+Each instance automatically becomes a NestJS dynamic module. Use them in the `imports` array:
 
 ```typescript
 @Module({
-  providers: [
+  imports: [
     Repository.Users,
     Database.Primary,
     Storage.S3,
@@ -135,20 +120,20 @@ Instances are shared across your entire application. Declare once, use anywhere:
 ```typescript
 // app.module.ts
 @Module({
-  providers: [Database.Primary],
+  imports: [Database.Primary],
 })
 export class AppModule {}
 
 // product.module.ts
 @Module({
-  providers: [Database.Primary],  // Same instance
+  imports: [Database.Primary],  // Same singleton instance
 })
 export class ProductModule {}
 ```
 
 ### Dual Injection
 
-**Natural Injection:**
+**Natural Injection (recommended):**
 
 ```typescript
 constructor(
@@ -175,11 +160,20 @@ Creates a new instance group.
 
 ```typescript
 const Repository = createInstanceGroup('Repository', {
-  useClassAsToken: true,  // Enable dual injection
-  global: false,
-  scope: Scope.DEFAULT,
+  useClassAsToken: true,  // Enable dual injection (default: true)
+  global: false,          // Make available globally (default: false)
+  scope: Scope.DEFAULT,   // Injection scope (default: Scope.DEFAULT)
 });
 ```
+
+#### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `useClassAsToken` | `boolean` | `true` | Enables injection using the class constructor |
+| `global` | `boolean` | `false` | Makes instances available without importing |
+| `scope` | `Scope` | `Scope.DEFAULT` | Sets the injection scope |
+| `tokenPrefix` | `string` | group name | Custom prefix for injection tokens |
 
 ### .scope(scope)
 
@@ -193,9 +187,9 @@ Repository.Users.scope(Scope.REQUEST); // New instance per HTTP request
 ### Helpers
 
 - **getInjectionToken(group, key)**: Get token for an instance
-- **getAllInstances()**: Get all registered instances
-- **instanceGroupToArray(group)**: Convert group to array
-- **allInstanceGroupsToArray()**: Convert all groups to array
+- **getAllInstances()**: Get all registered instances as a Map
+- **instanceGroupToArray(group)**: Convert a group to array of providers
+- **allInstanceGroupsToArray()**: Convert all groups to array of providers
 
 ---
 
@@ -203,7 +197,7 @@ Repository.Users.scope(Scope.REQUEST); // New instance per HTTP request
 
 ### 1. Centralize Instance Declaration
 
-Declare all instances in a single `instances.ts` file.
+Declare all instances in a single `instances.ts` file:
 
 ```typescript
 // instances.ts
@@ -214,34 +208,32 @@ Database.Primary = new DatabaseService(config);
 Repository.Users = new UserRepository(Database.Primary);
 ```
 
-### 2. Use Interfaces
+### 2. Use Imports, Not Providers
 
-Define interfaces for your repositories and services.
+Always use `imports` to register instances:
 
 ```typescript
-export interface IUserRepository {
-  findAll(): any;
-  findById(id: string): any;
-}
+// Correct
+@Module({
+  imports: [Repository.Users, Database.Primary],
+})
 
-export interface IEmailService {
-  send(to: string, subject: string, body: string): any;
-}
+// Incorrect (will cause errors)
+@Module({
+  providers: [Repository.Users, Database.Primary],
+})
 ```
 
-### 3. Inject Multiple Services
+### 3. Inject Using Concrete Classes
 
-Controllers can inject both repositories and external services.
+Use the concrete class type for injection, not interfaces:
 
 ```typescript
-@Controller('products')
-export class ProductController {
-  constructor(
-    private readonly productRepository: IProductRepository,
-    private readonly emailService: IEmailService,
-    private readonly s3Service: IS3Service,
-  ) {}
-}
+// Correct
+constructor(private readonly userRepository: UserRepository) {}
+
+// Incorrect (TypeScript interfaces don't exist at runtime)
+constructor(private readonly userRepository: IUserRepository) {}
 ```
 
 ### 4. Use Scopes Appropriately
@@ -249,6 +241,24 @@ export class ProductController {
 - **DEFAULT (Singleton)**: Database, Cache, Stateless services
 - **REQUEST**: Request-specific data, user context
 - **TRANSIENT**: Stateful services needing fresh instances
+
+```typescript
+// Request-scoped service
+export const RequestContext = createInstanceGroup('RequestContext', {
+  scope: Scope.REQUEST,
+});
+RequestContext.Context = new RequestContextService();
+```
+
+---
+
+## Examples
+
+See the `examples/` directory for complete working examples:
+
+- **01-basic**: Simple repository setup
+- **02-intermediate**: Multiple services, databases, and caching
+- **03-advanced**: Global modules, scopes, and complex dependency chains
 
 ---
 

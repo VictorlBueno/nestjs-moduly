@@ -3,13 +3,12 @@ import { Repository, RequestScope, TransientScope, Analytics } from '../../insta
 import { RequestTrackingController } from './request-tracking.controller';
 
 @Module({
-  controllers: [RequestTrackingController],
-  providers: [
+  imports: [
     Repository.RequestTracking,
     RequestScope.Context,
     TransientScope.Counter,
     Analytics.Tracker,
   ],
-  exports: [Repository.RequestTracking],
+  controllers: [RequestTrackingController],
 })
 export class RequestTrackingModule {}
