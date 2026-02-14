@@ -198,8 +198,9 @@ export class DataService {
 ```typescript
 export const Repository = createInstanceGroup('Repository', {
   useClassAsToken: true,  // Enable dual injection (default: true)
-  global: false,             // Make globally available (default: false)
-  tokenPrefix: 'Repo',       // Token prefix (default: group name)
+  global: false,           // Make globally available (default: false)
+  tokenPrefix: 'Repo',    // Token prefix (default: group name)
+  scope: Scope.DEFAULT,    // Injection scope (default: Scope.DEFAULT)
 });
 ```
 
@@ -222,6 +223,38 @@ export class SomeService {
   ) {}
 }
 ```
+
+### Scope Configuration
+
+Control the lifecycle of your instances using NestJS scopes:
+
+```typescript
+import { Scope } from '@nestjs/common';
+
+// Set scope per-instance
+export const Repository = createInstanceGroup('Repository');
+Repository.Users = new UserRepository(database);
+Repository.Users.scope(Scope.REQUEST); // New instance per HTTP request
+
+// Or set scope for all instances in group
+export const Services = createInstanceGroup('Services', {
+  scope: Scope.TRANSIENT, // New instance per injection
+});
+
+Services.Cache = new CacheService(config);
+Services.Logger = new LoggerService();
+
+// Available scopes:
+// Scope.DEFAULT - Singleton (default)
+// Scope.REQUEST - Per HTTP request
+// Scope.TRANSIENT - Per injection
+```
+
+**When to use each scope:**
+
+- **DEFAULT (Singleton)**: Database connections, external services, stateless services
+- **REQUEST**: Request-specific data, user context, request-scoped logging
+- **TRANSIENT**: Stateful services that need fresh instances
 
 ---
 
@@ -294,6 +327,24 @@ const Repository = createInstanceGroup('Repository', {
 ```
 
 ### getInjectionToken(groupName, key)
+
+Gets the injection token for a specific instance.
+
+### .scope(scope)
+
+Sets the injection scope for a specific instance.
+
+```typescript
+import { Scope } from '@nestjs/common';
+
+Repository.Users = new UserRepository(config);
+Repository.Users.scope(Scope.REQUEST);
+```
+
+Available scopes:
+- `Scope.DEFAULT` - Singleton (default)
+- `Scope.REQUEST` - Per HTTP request
+- `Scope.TRANSIENT` - Per injection
 
 Gets the injection token for a specific instance.
 

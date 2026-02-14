@@ -1,4 +1,4 @@
-import { Module, DynamicModule } from '@nestjs/common';
+import { Module, DynamicModule, Scope } from '@nestjs/common';
 import { ClassType, InstanceValue, InstanceGroupOptions, ProviderObject } from '../types';
 
 /**
@@ -54,7 +54,7 @@ export function createWrapperModule(
   instance: InstanceValue,
   options: InstanceGroupOptions = {}
 ): ClassType & ProviderObject {
-  const { global = false, useClassAsToken = true } = options;
+  const { global = false, useClassAsToken = true, scope = Scope.DEFAULT } = options;
 
   /**
    * Dynamic NestJS module that wraps the instance
@@ -64,6 +64,25 @@ export function createWrapperModule(
    */
   @Module({})
   class WrapperModule {
+    private static _scope = scope;
+
+    /**
+     * Sets the injection scope for this provider
+     *
+     * @param newScope - The scope to use (Scope.DEFAULT, Scope.REQUEST, Scope.TRANSIENT)
+     * @returns The WrapperModule class for chaining
+     *
+     * @example
+     * ```typescript
+     * Repository.Users = new UserRepository(db);
+     * Repository.Users.scope(Scope.REQUEST);
+     * ```
+     */
+    static scope(newScope: any): ClassType & ProviderObject {
+      WrapperModule._scope = newScope;
+      return WrapperModule as unknown as ClassType & ProviderObject;
+    }
+
     /**
      * Registers this module's dynamic configuration
      *
@@ -77,6 +96,7 @@ export function createWrapperModule(
         {
           provide: token,
           useValue: instance,
+          scope: WrapperModule._scope,
         },
       ];
 
@@ -85,6 +105,7 @@ export function createWrapperModule(
         providers.push({
           provide: instance.constructor,
           useValue: instance,
+          scope: WrapperModule._scope,
         });
       }
 

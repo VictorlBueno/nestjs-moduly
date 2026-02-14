@@ -12,7 +12,7 @@
  * ```
  */
 
-import { Module, Injectable } from '@nestjs/common';
+import {Module, Injectable, Scope} from '@nestjs/common';
 import { createInstanceGroup } from 'nestjs-moduly';
 
 /**
@@ -145,6 +145,7 @@ const awsConfig = { token: 'token', secret: 'secret' };
  * ```
  */
 Repository.Users = new UserRepository(databaseConfig);
+Repository.Users.scope(Scope.REQUEST);
 Repository.Address = new AddressRepository(databaseConfig);
 Service.KeyManager = new AwsKeyManager(awsConfig);
 

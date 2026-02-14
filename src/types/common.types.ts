@@ -161,6 +161,22 @@ export interface InstanceGroupOptions {
    * ```
    */
   useClassAsToken?: boolean;
+
+  /**
+   * The injection scope for instances in this group
+   *
+   * Can be overridden per-instance using the .scope() method on the wrapper
+   *
+   * @default Scope.DEFAULT
+   * @example
+   * ```typescript
+   * // Global request-scoped group
+   * export const Services = createInstanceGroup('Services', { scope: Scope.REQUEST });
+   * Services.Logger = new Logger();
+   * // Logger will be request-scoped for all instances
+   * ```
+   */
+  scope?: any;
 }
 
 /**
