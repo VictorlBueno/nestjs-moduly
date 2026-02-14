@@ -4,6 +4,7 @@ export class ProductRepository implements IProductRepository {
   constructor(
     private primaryDb: any,
     private cache: any,
+    private s3: any,
   ) {}
 
   findAll() {
@@ -15,6 +16,15 @@ export class ProductRepository implements IProductRepository {
     const result = this.primaryDb.query('SELECT * FROM products');
     this.cache.set('products', result);
     return { source: 'database', data: result };
+  }
+
+  findById(id: string) {
+    return this.primaryDb.query(`SELECT * FROM products WHERE id = ${id}`);
+  }
+
+  uploadImage(productId: string, imageData: any) {
+    const key = `products/${productId}/image.jpg`;
+    return this.s3.upload(key, imageData);
   }
 
   clearCache() {

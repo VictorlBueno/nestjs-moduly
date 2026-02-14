@@ -5,6 +5,12 @@ import { DatabaseService } from './services/database.service';
 import { CacheService } from './services/cache.service';
 import { RequestContextService } from './services/request-context.service';
 import { TransientCounterService } from './services/transient-counter.service';
+import { S3Service } from './services/s3.service';
+import { EmailService } from './services/email.service';
+import { QueueService } from './services/queue.service';
+import { SMSService } from './services/sms.service';
+import { AnalyticsService } from './services/analytics.service';
+import { NotificationService } from './services/notification.service';
 import { UserRepository } from './repositories/user.repository';
 import { ProductRepository } from './repositories/product.repository';
 import { RequestTrackingRepository } from './repositories/request-tracking.repository';
@@ -38,6 +44,36 @@ export const TransientScope = createInstanceGroup('TransientScope', {
   scope: Scope.TRANSIENT,
 });
 
+export const Storage = createInstanceGroup('Storage', {
+  global: false,
+  useClassAsToken: true,
+});
+
+export const NotificationEmail = createInstanceGroup('NotificationEmail', {
+  global: false,
+  useClassAsToken: true,
+});
+
+export const NotificationSMS = createInstanceGroup('NotificationSMS', {
+  global: false,
+  useClassAsToken: true,
+});
+
+export const Queue = createInstanceGroup('Queue', {
+  global: false,
+  useClassAsToken: true,
+});
+
+export const Analytics = createInstanceGroup('Analytics', {
+  global: false,
+  useClassAsToken: true,
+});
+
+export const Notification = createInstanceGroup('Notification', {
+  global: false,
+  useClassAsToken: true,
+});
+
 export const Repository = createInstanceGroup('Repository', {
   global: false,
   useClassAsToken: true,
@@ -55,6 +91,19 @@ RequestScope.Context = new RequestContextService();
 
 TransientScope.Counter = new TransientCounterService();
 
-Repository.Users = new UserRepository(Infrastructure.Logger.useValue, Database.Primary.useValue, Cache.Redis.useValue);
-Repository.Products = new ProductRepository(Database.Replica.useValue, Cache.Memcached.useValue);
-Repository.RequestTracking = new RequestTrackingRepository(RequestScope.Context.useValue, TransientScope.Counter.useValue);
+Storage.S3 = new S3Service({ bucket: 'my-bucket', region: 'us-east-1' });
+
+NotificationEmail.Email = new EmailService({ from: 'noreply@example.com', smtp: 'smtp.example.com' });
+
+NotificationSMS.SMS = new SMSService({ provider: 'twilio', apiKey: 'xxx' });
+
+Queue.Orders = new QueueService({ name: 'orders', type: 'sqs' });
+Queue.Products = new QueueService({ name: 'products', type: 'sqs' });
+
+Analytics.Tracker = new AnalyticsService({ apiKey: 'analytics-key', endpoint: 'https://analytics.example.com' });
+
+Notification.Main = new NotificationService(NotificationEmail.Email, NotificationSMS.SMS);
+
+Repository.Users = new UserRepository(Infrastructure.Logger, Database.Primary, Cache.Redis, Notification.Main, Analytics.Tracker);
+Repository.Products = new ProductRepository(Database.Replica, Cache.Memcached, Storage.S3, Queue.Products, Analytics.Tracker);
+Repository.RequestTracking = new RequestTrackingRepository(RequestScope.Context, TransientScope.Counter);

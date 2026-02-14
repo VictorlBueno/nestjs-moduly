@@ -4,6 +4,8 @@ export class OrderRepository implements IOrderRepository {
   constructor(
     private primaryDb: any,
     private replicaDb: any,
+    private email: any,
+    private s3: any,
   ) {}
 
   createOrder(orderData: any) {
@@ -20,5 +22,14 @@ export class OrderRepository implements IOrderRepository {
 
   getAllOrders() {
     return this.replicaDb.query('SELECT * FROM orders');
+  }
+
+  sendOrderConfirmationEmail(orderId: string, customerEmail: string) {
+    return this.email.send(customerEmail, `Order Confirmation #${orderId}`, 'Your order has been confirmed!');
+  }
+
+  exportOrderToS3(orderId: string, orderData: any) {
+    const key = `orders/${orderId}/export.json`;
+    return this.s3.upload(key, orderData);
   }
 }

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { Database, Cache } from './instances';
-import { ProductModule } from './product/product.module';
-import { OrderModule } from './order/order.module';
+import { ProductModule } from './modules/product/product.module';
+import { OrderModule } from './modules/order/order.module';
 
 @Module({
   imports: [

@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { Infrastructure, Database, Cache, RequestScope, TransientScope, instanceGroupToArray, allInstanceGroupsToArray, getAllInstances } from './instances';
-import { UserModule } from './user/user.module';
-import { ProductModule } from './product/product.module';
-import { RequestTrackingModule } from './request/request-tracking.module';
+import { UserModule } from './modules/user/user.module';
+import { ProductModule } from './modules/product/product.module';
+import { RequestTrackingModule } from './modules/request/request-tracking.module';
 
 @Module({
   imports: [

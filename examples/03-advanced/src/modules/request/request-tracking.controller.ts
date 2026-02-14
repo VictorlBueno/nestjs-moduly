@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import { IRequestTrackingRepository } from '../repositories/request-tracking.interface';
+import { IRequestTrackingRepository } from '../../repositories/request-tracking.interface';
 
 @Controller('tracking')
 export class RequestTrackingController {
