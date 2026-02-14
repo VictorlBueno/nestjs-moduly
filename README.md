@@ -22,6 +22,16 @@ yarn add nestjs-moduly
 pnpm add nestjs-moduly
 ```
 
+## Examples
+
+Explore working examples demonstrating different levels of complexity:
+
+- **[01 - Basic](./examples/01-basic)**: Simple usage with instance groups and natural injection
+- **[02 - Intermediate](./examples/02-intermediate)**: Multiple instances, flexible injection, and feature modules
+- **[03 - Advanced](./examples/03-advanced)**: All features including global providers, scopes, and helpers
+
+See the [examples README](./examples/README.md) for detailed instructions on running each example.
+
 ## Quick Start
 
 ### 1. Declare Dependencies
