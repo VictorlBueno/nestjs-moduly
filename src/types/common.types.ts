@@ -64,6 +64,9 @@ export interface ProviderObject {
  * Each property in an instance group is a wrapper that can be used
  * in both `imports` and `providers` arrays of NestJS modules
  *
+ * Note: While the type allows any value to be assigned, the proxy
+ * automatically transforms instances into wrapper modules at runtime.
+ *
  * @example
  * ```typescript
  * export const Repository = createInstanceGroup('Repository');
@@ -72,7 +75,19 @@ export interface ProviderObject {
  * ```
  */
 export interface InstanceGroup {
-  [key: string]: ClassType & ProviderObject;
+  [key: string]: any;
+}
+
+/**
+ * Writeable version of InstanceGroup used internally for proxy operations
+ *
+ * This type allows instances to be assigned before they are wrapped.
+ * The proxy's set handler transforms instances into wrapper modules.
+ *
+ * @internal
+ */
+export interface WriteableInstanceGroup {
+  [key: string]: any;
 }
 
 /**

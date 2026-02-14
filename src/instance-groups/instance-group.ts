@@ -1,4 +1,4 @@
-import { InstanceGroup, InstanceGroupOptions, InstanceValue, ClassType } from '../types';
+import { InstanceGroup, WriteableInstanceGroup, InstanceGroupOptions, InstanceValue, ClassType } from '../types';
 import { InstanceStorage } from './storage';
 import { createWrapperModule } from './wrapper';
 
@@ -51,7 +51,7 @@ export function createInstanceGroup(
   name: string,
   options: InstanceGroupOptions = {}
 ): InstanceGroup {
-  const group: InstanceGroup = {};
+  const group: WriteableInstanceGroup = {};
   const resolvedOptions: InstanceGroupOptions = {
     tokenPrefix: name,
     global: false,
