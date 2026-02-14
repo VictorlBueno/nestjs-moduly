@@ -54,13 +54,10 @@ import { Module } from '@nestjs/common';
 import { Repository, Service } from './instances';
 
 @Module({
-  imports: [
-    Repository.Users,      // Import the module
+  providers: [
+    Repository.Users,
     Repository.Address,
     Service.KeyManager,
-  ],
-  providers: [
-    Repository.Users,      // Or add as provider
   ],
 })
 export class AppModule {}
@@ -117,12 +114,11 @@ Infrastructure.Database = new DatabaseService(config);
 
 ### Automatic Module Wrapping
 
-Each instance automatically becomes a NestJS module that can be used in both `imports` and `providers` arrays:
+Each instance automatically becomes a NestJS provider:
 
 ```typescript
 @Module({
-  imports: [Repository.Users],      // ✅ Works
-  providers: [Repository.Users],    // ✅ Also works
+  providers: [Repository.Users],
 })
 export class AppModule {}
 ```
@@ -134,13 +130,13 @@ Instances are shared across your entire application. Declare once, use anywhere:
 ```typescript
 // app.module.ts
 @Module({
-  imports: [Repository.Users],
+  providers: [Repository.Users],
 })
 export class AppModule {}
 
 // user.module.ts
 @Module({
-  imports: [Repository.Users],  // Same instance
+  providers: [Repository.Users],  // Same instance
 })
 export class UserModule {}
 
@@ -269,7 +265,7 @@ Infrastructure.Cache = new RedisService(redisConfig);
 Infrastructure.Logger = new WinstonLogger();
 
 @Module({
-  imports: [
+  providers: [
     Infrastructure.Database,
     Infrastructure.Cache,
   ],
@@ -380,22 +376,22 @@ allInstances.forEach((instance, token) => {
 
 ### instanceGroupToArray(groupName)
 
-Converts a group to an array of modules.
+Converts a group to an array of providers.
 
 ```typescript
 @Module({
-  imports: [...instanceGroupToArray('Repository')],
+  providers: [...instanceGroupToArray('Repository')],
 })
 export class AppModule {}
 ```
 
 ### allInstanceGroupsToArray()
 
-Converts all groups to an array of modules.
+Converts all groups to an array of providers.
 
 ```typescript
 @Module({
-  imports: [...allInstanceGroupsToArray()],
+  providers: [...allInstanceGroupsToArray()],
 })
 export class AppModule {}
 ```
