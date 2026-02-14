@@ -121,6 +121,40 @@ export function createWrapperModule(
   }
 
   /**
+   * Get the dynamic module configuration
+   * This is automatically applied when the module is imported
+   */
+  const dynamicModuleConfig = WrapperModule.register();
+
+  /**
+   * Add dynamic module properties to the class
+   * This allows NestJS to recognize it as a dynamic module
+   */
+  Object.defineProperty(WrapperModule, 'module', {
+    value: WrapperModule,
+    enumerable: true,
+    writable: false,
+  });
+
+  Object.defineProperty(WrapperModule, 'providers', {
+    value: dynamicModuleConfig.providers,
+    enumerable: true,
+    writable: false,
+  });
+
+  Object.defineProperty(WrapperModule, 'exports', {
+    value: dynamicModuleConfig.exports,
+    enumerable: true,
+    writable: false,
+  });
+
+  Object.defineProperty(WrapperModule, 'global', {
+    value: dynamicModuleConfig.global,
+    enumerable: true,
+    writable: false,
+  });
+
+  /**
    * Add provider properties directly to the class prototype
    *
    * This allows the module to be used in the providers array
