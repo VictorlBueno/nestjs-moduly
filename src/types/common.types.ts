@@ -30,6 +30,27 @@ export type ClassType<T = any> = new (...args: any[]) => T;
 export type InstanceValue = unknown;
 
 /**
+ * A lazy recipe: a function that builds an instance when resolved
+ *
+ * When you assign a function (that is not a class) to an instance group
+ * property, it is treated as a lazy recipe instead of an eager value.
+ * The recipe runs on demand, in dependency order, and its result is
+ * memoized (shared as a singleton). References to other instances made
+ * inside the recipe (e.g. `Database.Primary`) resolve to the real
+ * instance at resolution time.
+ *
+ * @template T - The type of instance the recipe produces
+ * @example
+ * ```typescript
+ * // Order does not matter: the recipe only runs when resolved
+ * Repository.Users = () => new UserRepository(Database.Primary, Cache.Redis);
+ * Database.Primary = () => new DatabaseService('PrimaryDB');
+ * Cache.Redis      = () => new CacheService('Redis');
+ * ```
+ */
+export type InstanceFactory<T = unknown> = () => T;
+
+/**
  * Represents a provider object configuration for NestJS dependency injection
  *
  * This interface defines the structure required for a value

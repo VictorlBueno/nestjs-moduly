@@ -1,6 +1,40 @@
-import { InstanceGroup, WriteableInstanceGroup, InstanceGroupOptions, InstanceValue, ClassType } from '../types';
+import { InstanceGroup, WriteableInstanceGroup, InstanceGroupOptions, InstanceValue, ClassType, InstanceFactory } from '../types';
 import { InstanceStorage } from './storage';
-import { createWrapperModule } from './wrapper';
+import { createWrapperModule, createLazyWrapperModule } from './wrapper';
+import { InstanceResolver } from './resolver';
+
+/**
+ * Determines whether a value is a class constructor (as opposed to a plain
+ * function used as a lazy recipe)
+ *
+ * A class is a function too, so `typeof value === 'function'` is not enough to
+ * tell a recipe (`() => new X()`) from a class assigned as a value. Class
+ * declarations stringify starting with the `class` keyword, which lets us tell
+ * them apart reliably.
+ *
+ * @param value - The value to inspect
+ * @returns True if the value is a class constructor
+ */
+function isClass(value: unknown): boolean {
+  return (
+    typeof value === 'function' &&
+    /^class[\s{]/.test(Function.prototype.toString.call(value))
+  );
+}
+
+/**
+ * Determines whether an assigned value should be treated as a lazy recipe
+ *
+ * Any function that is not a class is treated as a recipe. This is what enables
+ * the `Group.Key = () => new X(...)` syntax to opt into lazy resolution while
+ * `Group.Key = new X(...)` (and configs, primitives, etc.) stay eager.
+ *
+ * @param value - The value being assigned
+ * @returns True if the value is a lazy recipe
+ */
+function isRecipe(value: unknown): value is InstanceFactory {
+  return typeof value === 'function' && !isClass(value);
+}
 
 /**
  * Creates a proxy-based instance group that automatically wraps instances
@@ -87,10 +121,16 @@ export function createInstanceGroup(
     set(target, property, value): boolean {
       if (typeof property === 'string') {
         const token = `${name}.${property}`;
-        InstanceStorage.setInstance(name, property, value);
 
-        const wrapperModule = createWrapperModule(token, value, resolvedOptions);
-        target[property] = wrapperModule;
+        if (isRecipe(value)) {
+          // Lazy path: store the recipe and defer construction until resolution.
+          InstanceStorage.setRecipe(name, property, value);
+          target[property] = createLazyWrapperModule(token, name, property, resolvedOptions);
+        } else {
+          // Eager path: build the wrapper around the ready-made value (as before).
+          InstanceStorage.setInstance(name, property, value);
+          target[property] = createWrapperModule(token, value, resolvedOptions);
+        }
       }
       return true;
     },
@@ -110,6 +150,12 @@ export function createInstanceGroup(
         };
       }
       if (typeof property === 'string') {
+        // Inside a recipe execution, reading a sibling (e.g. Database.Primary)
+        // must return the resolved instance, not its wrapper module. Everywhere
+        // else (e.g. imports: [Database.Primary]) it returns the wrapper module.
+        if (InstanceResolver.isResolving()) {
+          return InstanceResolver.resolve(name, property);
+        }
         return target[property];
       }
       return undefined;

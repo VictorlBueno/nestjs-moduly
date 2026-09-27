@@ -1,5 +1,6 @@
 import { Module, DynamicModule, Scope } from '@nestjs/common';
 import { ClassType, InstanceValue, InstanceGroupOptions, ProviderObject } from '../types';
+import { InstanceResolver } from './resolver';
 
 /**
  * Creates a dynamic NestJS module that wraps an instance
@@ -187,6 +188,122 @@ export function createWrapperModule(
     value: instance?.constructor,
     enumerable: true,
     writable: false,
+  });
+
+  return WrapperModule as unknown as ClassType & ProviderObject;
+}
+
+/**
+ * Creates a dynamic NestJS module that wraps a lazy recipe
+ *
+ * Unlike {@link createWrapperModule}, the instance is not known when this
+ * function runs. The recipe is resolved lazily — the module's `providers`,
+ * `exports`, `useValue` and `instanceClass` are exposed as getters that trigger
+ * resolution the first time NestJS reads them (at bootstrap), in dependency
+ * order, and cache the result.
+ *
+ * This is what makes declaration order in the instances file irrelevant: the
+ * recipe only runs once every group has been declared, and referencing sibling
+ * instances inside the recipe resolves them on demand.
+ *
+ * @param token - The injection token for the instance ("GroupName.Key")
+ * @param groupName - The name of the instance group
+ * @param key - The key within the group
+ * @param options - Configuration options for the wrapper module
+ * @returns A dynamic module class that also acts as a provider object
+ *
+ * @example
+ * ```typescript
+ * // Assigned internally when you write:
+ * Repository.Users = () => new UserRepository(Database.Primary, Cache.Redis);
+ * ```
+ */
+export function createLazyWrapperModule(
+  token: string,
+  groupName: string,
+  key: string,
+  options: InstanceGroupOptions = {}
+): ClassType & ProviderObject {
+  const { global = false, useClassAsToken = true, scope = Scope.DEFAULT } = options;
+
+  let cachedConfig: { providers: any[]; exports: (string | symbol | Function)[] } | null = null;
+
+  /**
+   * Resolves the recipe (once) and builds the provider configuration
+   *
+   * Runs when NestJS first reads the module's `providers`/`exports` at bootstrap,
+   * by which point every instance group has been declared.
+   */
+  const buildConfig = () => {
+    if (cachedConfig) {
+      return cachedConfig;
+    }
+
+    const instance = InstanceResolver.resolve(groupName, key) as any;
+
+    const providers: any[] = [
+      {
+        provide: token,
+        useValue: instance,
+        scope,
+      },
+    ];
+
+    if (useClassAsToken && instance && instance.constructor) {
+      providers.push({
+        provide: instance.constructor,
+        useValue: instance,
+        scope,
+      });
+    }
+
+    cachedConfig = { providers, exports: providers.map((p) => p.provide) };
+    return cachedConfig;
+  };
+
+  @Module({})
+  class WrapperModule {}
+
+  /**
+   * Dynamic module properties, exposed as getters so resolution is deferred
+   * until NestJS reads them at bootstrap
+   */
+  Object.defineProperty(WrapperModule, 'module', {
+    get: () => WrapperModule,
+    enumerable: true,
+  });
+
+  Object.defineProperty(WrapperModule, 'providers', {
+    get: () => buildConfig().providers,
+    enumerable: true,
+  });
+
+  Object.defineProperty(WrapperModule, 'exports', {
+    get: () => buildConfig().exports,
+    enumerable: true,
+  });
+
+  Object.defineProperty(WrapperModule, 'global', {
+    get: () => global,
+    enumerable: true,
+  });
+
+  /**
+   * Provider properties so the wrapper can also be used in a `providers` array
+   */
+  Object.defineProperty(WrapperModule, 'provide', {
+    get: () => token,
+    enumerable: true,
+  });
+
+  Object.defineProperty(WrapperModule, 'useValue', {
+    get: () => InstanceResolver.resolve(groupName, key),
+    enumerable: true,
+  });
+
+  Object.defineProperty(WrapperModule, 'instanceClass', {
+    get: () => (InstanceResolver.resolve(groupName, key) as any)?.constructor,
+    enumerable: true,
   });
 
   return WrapperModule as unknown as ClassType & ProviderObject;

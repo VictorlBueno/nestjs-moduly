@@ -1,4 +1,4 @@
-import { InstanceGroup, InstanceGroupOptions, InstanceValue } from '../types';
+import { InstanceGroup, InstanceGroupOptions, InstanceValue, InstanceFactory } from '../types';
 
 /**
  * Internal storage for managing instance groups and their configurations
@@ -27,6 +27,7 @@ export class InstanceStorage {
     group: InstanceGroup;
     options: InstanceGroupOptions;
     instances: Map<string, InstanceValue>;
+    recipes: Map<string, InstanceFactory>;
   }> = new Map();
 
   /**
@@ -46,6 +47,7 @@ export class InstanceStorage {
       group,
       options: { tokenPrefix: 'InstanceGroup', global: false, ...options },
       instances: new Map(),
+      recipes: new Map(),
     });
   }
 
@@ -102,6 +104,49 @@ export class InstanceStorage {
     if (group) {
       group.instances.set(key, instance);
     }
+  }
+
+  /**
+   * Stores a lazy recipe (factory) in the specified group
+   *
+   * The recipe is not executed here; it runs later, on demand, during
+   * resolution. Storing a recipe marks the key as lazy.
+   *
+   * @param groupName - The name of the instance group
+   * @param key - The key within the group to store the recipe under
+   * @param factory - The factory function that builds the instance
+   * @example
+   * ```typescript
+   * InstanceStorage.setRecipe('Repository', 'Users', () => new UserRepository(db));
+   * ```
+   */
+  static setRecipe(groupName: string, key: string, factory: InstanceFactory): void {
+    const group = this.groups.get(groupName);
+    if (group) {
+      group.recipes.set(key, factory);
+    }
+  }
+
+  /**
+   * Retrieves a lazy recipe (factory) from a group, if one was registered
+   *
+   * @param groupName - The name of the instance group
+   * @param key - The key within the group
+   * @returns The factory function, or undefined if the key is not lazy
+   */
+  static getRecipe(groupName: string, key: string): InstanceFactory | undefined {
+    return this.groups.get(groupName)?.recipes.get(key);
+  }
+
+  /**
+   * Checks whether a key in a group was registered as a lazy recipe
+   *
+   * @param groupName - The name of the instance group
+   * @param key - The key within the group
+   * @returns True if the key is a lazy recipe, false otherwise
+   */
+  static hasRecipe(groupName: string, key: string): boolean {
+    return this.groups.get(groupName)?.recipes.has(key) ?? false;
   }
 
   /**

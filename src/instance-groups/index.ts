@@ -8,5 +8,6 @@ export {
   getInstanceClass,
 } from './helpers';
 export { InstanceStorage } from './storage';
-export { createWrapperModule } from './wrapper';
-export { InstanceGroup, InstanceGroupOptions } from '../types';
+export { InstanceResolver } from './resolver';
+export { createWrapperModule, createLazyWrapperModule } from './wrapper';
+export { InstanceGroup, InstanceGroupOptions, InstanceFactory } from '../types';
