@@ -131,6 +131,49 @@ export class AppModule {}
 export class ProductModule {}
 ```
 
+### Lazy Declaration (Recipes)
+
+By default an instance is built eagerly, the moment you assign it. That forces
+you to declare dependencies before their consumers and to keep every
+declaration in the right order by hand:
+
+```typescript
+// Eager: DatabaseService is created here and MUST come before UserRepository
+const database = new DatabaseService(config);
+Repository.Users = new UserRepository(database);
+```
+
+Assign a **function** instead, and it becomes a lazy recipe. moduly runs it on
+demand and resolves any instance you reference inside it:
+
+```typescript
+Repository.Users = () => new UserRepository(Database.Primary, Cache.Redis);
+Database.Primary = () => new DatabaseService(config);
+Cache.Redis      = () => new CacheService();
+```
+
+The rule is simple — **assign a function → lazy recipe; assign anything else
+(an instance, a config object, a primitive) → eager value**, exactly as before.
+Lazy is fully opt-in and nothing breaks.
+
+**Why it matters (especially in large projects):**
+
+- **Order-independent.** Recipes run at bootstrap in dependency order, so it no
+  longer matters which line — or which file — declares an instance first.
+- **Split wiring across files.** Because order is irrelevant, you can break a
+  large `instances.ts` into domain files (`database.ts`, `cache.ts`,
+  `repositories.ts`, ...) and join them with a barrel. See `examples/03-advanced`.
+- **Only builds what you use.** An instance whose module is never imported and
+  is referenced by no recipe is never created.
+- **Singletons + cycle detection.** Each recipe runs at most once (shared
+  singleton), and a circular dependency throws a clear error instead of
+  overflowing the stack.
+
+Inside a recipe, reference other instances directly through their groups
+(`Database.Primary`) and moduly resolves them to the real instance. Outside a
+recipe (e.g. `imports: [Database.Primary]`) the same property is the module
+wrapper, as usual.
+
 ### Dual Injection
 
 **Natural Injection (recommended):**
@@ -195,18 +238,28 @@ Repository.Users.scope(Scope.REQUEST); // New instance per HTTP request
 
 ## Best Practices
 
-### 1. Centralize Instance Declaration
+### 1. Centralize or Split Instance Declaration
 
-Declare all instances in a single `instances.ts` file:
+For small projects, declare everything in a single `instances.ts`. For large
+projects, split declarations into domain files and join them with a barrel —
+lazy recipes make this safe because load order stops mattering:
 
 ```typescript
-// instances.ts
+// instances/database.ts
 export const Database = createInstanceGroup('Database');
-export const Repository = createInstanceGroup('Repository');
+Database.Primary = () => new DatabaseService(config);
 
-Database.Primary = new DatabaseService(config);
-Repository.Users = new UserRepository(Database.Primary);
+// instances/repositories.ts
+import { Database } from './database';
+export const Repository = createInstanceGroup('Repository');
+Repository.Users = () => new UserRepository(Database.Primary);
+
+// instances/index.ts
+export * from './database';
+export * from './repositories';
 ```
+
+See `examples/03-advanced` for the full domain-split pattern.
 
 ### 2. Use Imports, Not Providers
 
