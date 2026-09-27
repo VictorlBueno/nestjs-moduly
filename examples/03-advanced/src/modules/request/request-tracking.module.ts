@@ -1,14 +1,9 @@
 import { Module } from '@nestjs/common';
-import { Repository, RequestScope, TransientScope, Analytics } from '../../instances';
+import { Repository } from '../../instances';
 import { RequestTrackingController } from './request-tracking.controller';
 
 @Module({
-  imports: [
-    Repository.RequestTracking,
-    RequestScope.Context,
-    TransientScope.Counter,
-    Analytics.Tracker,
-  ],
+  imports: [Repository.RequestTracking],
   controllers: [RequestTrackingController],
 })
 export class RequestTrackingModule {}
