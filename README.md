@@ -215,17 +215,40 @@ const Repository = createInstanceGroup('Repository', {
 |--------|------|---------|-------------|
 | `useClassAsToken` | `boolean` | `true` | Enables injection using the class constructor |
 | `global` | `boolean` | `false` | Makes instances available without importing |
-| `scope` | `Scope` | `Scope.DEFAULT` | Sets the injection scope |
+| `scope` | `Scope` | `Scope.DEFAULT` | Injection scope (applies to lazy recipes only) |
 | `tokenPrefix` | `string` | group name | Custom prefix for injection tokens |
 
-### .scope(scope)
+### Scopes (REQUEST / TRANSIENT)
 
-Sets the injection scope for an instance.
+> Scopes only take effect on **lazy recipes** (the `() => new X()` form). An eager
+> value is a `useValue` provider, which is always a singleton — its `scope` is
+> ignored. Use a recipe when you need REQUEST or TRANSIENT.
+
+Set the scope once for a whole group:
 
 ```typescript
-Repository.Users = new UserRepository(config);
-Repository.Users.scope(Scope.REQUEST); // New instance per HTTP request
+const Request = createInstanceGroup('Request', { scope: Scope.REQUEST });
+Request.Context = () => new RequestContextService(); // new instance per request
 ```
+
+Or override a single instance with `.scope()`:
+
+```typescript
+Repository.Users = () => new UserRepository(Database.Primary);
+Repository.Users.scope(Scope.TRANSIENT); // only Users is transient
+```
+
+Scoped instances are registered under their **string token** only (the class
+isn't known before the first build), so inject them with the token:
+
+```typescript
+constructor(@Inject('Request.Context') private ctx: RequestContextService) {}
+// or: moduleRef.resolve('Request.Context')
+```
+
+A scoped instance is truly per-request/per-injection only when NestJS injects it
+directly. If you embed it inside another singleton recipe, that recipe captures a
+single instance — so keep scoped instances as leaf providers.
 
 ### Helpers
 
@@ -295,12 +318,14 @@ constructor(private readonly userRepository: IUserRepository) {}
 - **REQUEST**: Request-specific data, user context
 - **TRANSIENT**: Stateful services needing fresh instances
 
+Scopes require the lazy recipe form (`() => new X()`):
+
 ```typescript
 // Request-scoped service
 export const RequestContext = createInstanceGroup('RequestContext', {
   scope: Scope.REQUEST,
 });
-RequestContext.Context = new RequestContextService();
+RequestContext.Context = () => new RequestContextService();
 ```
 
 ---
