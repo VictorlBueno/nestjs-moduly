@@ -226,35 +226,46 @@ export function createLazyWrapperModule(
 ): ClassType & ProviderObject {
   const { global = false, useClassAsToken = true, scope = Scope.DEFAULT } = options;
 
+  let currentScope = scope;
   let cachedConfig: { providers: any[]; exports: (string | symbol | Function)[] } | null = null;
 
   /**
-   * Resolves the recipe (once) and builds the provider configuration
+   * Builds the provider configuration when NestJS first reads it at bootstrap.
    *
-   * Runs when NestJS first reads the module's `providers`/`exports` at bootstrap,
-   * by which point every instance group has been declared.
+   * - DEFAULT scope: resolve the recipe once and share it (memoized `useValue`),
+   *   plus the class token for dual injection.
+   * - REQUEST/TRANSIENT scope: emit a real `useFactory` that NestJS re-runs per
+   *   request/injection, so a fresh instance is produced each time. Only the
+   *   string token is registered (inject scoped instances by their token or via
+   *   `moduleRef.resolve`), since the class isn't known ahead of the first build.
    */
   const buildConfig = () => {
     if (cachedConfig) {
       return cachedConfig;
     }
 
-    const instance = InstanceResolver.resolve(groupName, key) as any;
+    const isScoped = currentScope !== undefined && currentScope !== Scope.DEFAULT;
 
-    const providers: any[] = [
-      {
-        provide: token,
-        useValue: instance,
-        scope,
-      },
-    ];
+    let providers: any[];
+    if (isScoped) {
+      providers = [
+        {
+          provide: token,
+          useFactory: () => InstanceResolver.build(groupName, key),
+          scope: currentScope,
+        },
+      ];
+    } else {
+      const instance = InstanceResolver.resolve(groupName, key) as any;
+      providers = [{ provide: token, useValue: instance, scope: currentScope }];
 
-    if (useClassAsToken && instance && instance.constructor) {
-      providers.push({
-        provide: instance.constructor,
-        useValue: instance,
-        scope,
-      });
+      if (useClassAsToken && instance && instance.constructor) {
+        providers.push({
+          provide: instance.constructor,
+          useValue: instance,
+          scope: currentScope,
+        });
+      }
     }
 
     cachedConfig = { providers, exports: providers.map((p) => p.provide) };
@@ -263,6 +274,19 @@ export function createLazyWrapperModule(
 
   @Module({})
   class WrapperModule {}
+
+  /**
+   * Overrides the scope for this single instance (chainable), e.g.
+   * `Request.Context.scope(Scope.TRANSIENT)`. Takes effect because the config
+   * is built lazily at bootstrap, after this file has run.
+   */
+  Object.defineProperty(WrapperModule, 'scope', {
+    value: (newScope: any) => {
+      currentScope = newScope;
+      return WrapperModule;
+    },
+    enumerable: true,
+  });
 
   /**
    * Dynamic module properties, exposed as getters so resolution is deferred
@@ -296,13 +320,19 @@ export function createLazyWrapperModule(
     enumerable: true,
   });
 
+  const isScoped = () =>
+    currentScope !== undefined && currentScope !== Scope.DEFAULT;
+
   Object.defineProperty(WrapperModule, 'useValue', {
-    get: () => InstanceResolver.resolve(groupName, key),
+    get: () => (isScoped() ? undefined : InstanceResolver.resolve(groupName, key)),
     enumerable: true,
   });
 
   Object.defineProperty(WrapperModule, 'instanceClass', {
-    get: () => (InstanceResolver.resolve(groupName, key) as any)?.constructor,
+    get: () =>
+      isScoped()
+        ? undefined
+        : (InstanceResolver.resolve(groupName, key) as any)?.constructor,
     enumerable: true,
   });
 

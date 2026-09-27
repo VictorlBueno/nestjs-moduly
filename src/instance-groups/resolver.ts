@@ -100,6 +100,46 @@ export class InstanceResolver {
   }
 
   /**
+   * Runs a recipe fresh, WITHOUT memoizing the result
+   *
+   * Used by scoped providers (REQUEST/TRANSIENT), where NestJS calls the
+   * factory again for each request/injection, so the instance must not be
+   * cached. Dependencies referenced inside the recipe are still resolved through
+   * {@link resolve} (so singletons stay shared). Runs inside a resolution
+   * context and detects cycles, just like {@link resolve}.
+   *
+   * @param groupName - The name of the instance group
+   * @param key - The key within the group
+   * @returns A brand-new instance (or the eager value if the key is not lazy)
+   * @throws {Error} When a circular dependency is detected
+   */
+  static build(groupName: string, key: string): unknown {
+    const token = `${groupName}.${key}`;
+
+    if (!InstanceStorage.hasRecipe(groupName, key)) {
+      return InstanceStorage.getInstance(groupName, key);
+    }
+
+    if (this.resolving.has(token)) {
+      const chain = [...this.resolving, token].join(' -> ');
+      throw new Error(
+        `[nestjs-moduly] Circular dependency detected while resolving lazy instances: ${chain}`
+      );
+    }
+
+    const recipe = InstanceStorage.getRecipe(groupName, key)!;
+
+    this.resolving.add(token);
+    this.depth++;
+    try {
+      return recipe();
+    } finally {
+      this.depth--;
+      this.resolving.delete(token);
+    }
+  }
+
+  /**
    * Clears all resolved instances and resolution state
    *
    * Useful in tests that build and tear down multiple application instances
